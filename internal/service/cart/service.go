@@ -1,16 +1,16 @@
-package service
+package cart
 
 import "github.com/Temich14/cart_test/internal/domain/entity"
 
-type CartService struct {
-	repo CartRepository
+type Service struct {
+	repo Repository
 }
 
-func NewCartService(repo CartRepository) *CartService {
-	return &CartService{repo: repo}
+func NewCartService(repo Repository) *Service {
+	return &Service{repo: repo}
 }
 
-func (s *CartService) AddProductToCart(userID, productID uint, quantity int) error {
+func (s *Service) AddProductToCart(userID, productID uint, quantity int) error {
 	cart, err := s.repo.GetUserCart(userID)
 	if err != nil {
 		return err
@@ -25,7 +25,7 @@ func (s *CartService) AddProductToCart(userID, productID uint, quantity int) err
 	}
 	return nil
 }
-func (s *CartService) RemoveProductFromCart(userID, productID uint) error {
+func (s *Service) RemoveProductFromCart(userID, productID uint) error {
 	cart, err := s.repo.GetUserCart(userID)
 	if err != nil {
 		return err
@@ -36,14 +36,14 @@ func (s *CartService) RemoveProductFromCart(userID, productID uint) error {
 	}
 	return nil
 }
-func (s *CartService) GetUserCart(userID uint) (*entity.Cart, error) {
+func (s *Service) GetUserCart(userID uint) (*entity.Cart, error) {
 	cart, err := s.repo.GetUserCart(userID)
 	if err != nil {
 		return nil, err
 	}
 	return cart, nil
 }
-func (s *CartService) ChangeQuantity(userID, productID uint, quantity int) error {
+func (s *Service) ChangeQuantity(userID, productID uint, quantity int) error {
 	cart, err := s.repo.GetUserCart(userID)
 	if err != nil {
 		return err
@@ -59,10 +59,10 @@ func (s *CartService) ChangeQuantity(userID, productID uint, quantity int) error
 	}
 	return nil
 }
-func (s *CartService) calculateTotalQuantity(cart *entity.Cart) error {
+func (s *Service) calculateTotalQuantity(cart *entity.Cart) error {
 	totalQuantity := 0
-	for item := range cart.Items {
-		totalQuantity += cart.Items[item].Quantity
+	for _, item := range cart.Items {
+		totalQuantity += item.Quantity
 	}
 	cart.TotalQuantity = totalQuantity
 	err := s.repo.SaveCart(cart)
