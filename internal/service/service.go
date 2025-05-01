@@ -1,5 +1,7 @@
 package service
 
+import "github.com/Temich14/cart_test/internal/domain/entity"
+
 type CartService struct {
 	repo CartRepository
 }
@@ -34,4 +36,11 @@ func (s *CartService) RemoveProductFromCart(userID, productID uint) error {
 		return err
 	}
 	return nil
+}
+func (s *CartService) GetUserCart(userID uint) (*entity.Cart, error) {
+	cart, err := s.repo.GetUserCart(userID)
+	if err != nil {
+		return nil, err
+	}
+	return cart, nil
 }
