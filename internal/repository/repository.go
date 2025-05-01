@@ -4,26 +4,27 @@ import (
 	"errors"
 	"github.com/Temich14/cart_test/internal/domain/entity"
 	"gorm.io/gorm"
+	"time"
 )
 
-type CartRepository struct {
+type Repository struct {
 	db *gorm.DB
 }
 
-func NewCartRepository(db *gorm.DB) *CartRepository {
-	return &CartRepository{db: db}
+func NewCartRepository(db *gorm.DB) *Repository {
+	return &Repository{db: db}
 }
-func (r *CartRepository) SaveCart(cart *entity.Cart) error {
+func (r *Repository) SaveCart(cart *entity.Cart) error {
 	return r.db.Save(cart).Error
 }
-func (r *CartRepository) AddProduct(cartID, productID uint, quantity int) error {
+func (r *Repository) AddProduct(cartID, productID uint, quantity int) error {
 	item := entity.CartItem{CartID: cartID, ProductID: productID, Quantity: quantity}
 	if err := r.db.Create(&item).Error; err != nil {
 		return err
 	}
 	return nil
 }
-func (r *CartRepository) GetUserCart(userID uint) (*entity.Cart, error) {
+func (r *Repository) GetUserCart(userID uint) (*entity.Cart, error) {
 	var cart entity.Cart
 	err := r.db.Where("user_id = ?", userID).First(&cart).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -39,17 +40,63 @@ func (r *CartRepository) GetUserCart(userID uint) (*entity.Cart, error) {
 	}
 	return &cart, nil
 }
-func (r *CartRepository) RemoveProduct(cartID, productID uint) error {
+func (r *Repository) RemoveProduct(cartID, productID uint) error {
 	item := entity.CartItem{CartID: cartID, ProductID: productID}
 	if err := r.db.Where(&item).Delete(&item).Error; err != nil {
 		return err
 	}
 	return nil
 }
-func (r *CartRepository) ChangeQuantity(cartID uint, carItemID uint, newQuantity int) error {
+func (r *Repository) ChangeQuantity(cartID uint, carItemID uint, newQuantity int) error {
 	item := entity.CartItem{CartID: cartID, ProductID: carItemID}
 	if err := r.db.Model(&item).UpdateColumn("quantity", newQuantity).Error; err != nil {
 		return err
 	}
 	return nil
+}
+func (r *Repository) CreateOrder(cart *entity.Cart) (*entity.Order, error) {
+	status := entity.CREATED
+	order := entity.Order{
+		UserID:        cart.UserID,
+		ItemsQuantity: cart.TotalQuantity,
+		Status:        string(status),
+		CreatedAt:     time.Now(),
+	}
+	if err := r.db.Create(&entity.Order{}).Error; err != nil {
+		return nil, err
+	}
+	for _, cartItem := range cart.Items {
+		orderItem := entity.OrderItem{
+			ProductID: cartItem.ProductID,
+			Quantity:  cartItem.Quantity,
+		}
+		order.Items = append(order.Items, orderItem)
+	}
+	if err := r.db.Save(&order).Error; err != nil {
+		return nil, err
+	}
+	return &order, nil
+}
+func (r *Repository) ChangeOrderStatus(orderID uint, status entity.OrderStatus) error {
+	var order *entity.Order
+	err := r.db.Where("order_id = ?", orderID).First(&order).Error
+	if err != nil {
+		return err
+	}
+	return r.db.Model(order).Update("status", string(status)).Error
+}
+func (r *Repository) GetUserOrders(userID uint) ([]*entity.Order, error) {
+	var orders []*entity.Order
+	err := r.db.Where("user_id = ?", userID).Find(&orders).Error
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+func (r *Repository) GetUserOrder(orderID uint) (*entity.Order, error) {
+	var order *entity.Order
+	if err := r.db.Where("order_id = ?", orderID).First(&order).Error; err != nil {
+		return nil, err
+	}
+	return order, nil
 }
