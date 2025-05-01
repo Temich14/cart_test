@@ -19,8 +19,7 @@ func (s *CartService) AddProductToCart(userID, productID uint, quantity int) err
 	if err != nil {
 		return err
 	}
-	cart.TotalQuantity += quantity
-	err = s.repo.SaveCart(cart)
+	err = s.calculateTotalQuantity(cart)
 	if err != nil {
 		return err
 	}
@@ -43,4 +42,32 @@ func (s *CartService) GetUserCart(userID uint) (*entity.Cart, error) {
 		return nil, err
 	}
 	return cart, nil
+}
+func (s *CartService) ChangeQuantity(userID, productID uint, quantity int) error {
+	cart, err := s.repo.GetUserCart(userID)
+	if err != nil {
+		return err
+	}
+	err = s.repo.ChangeQuantity(cart.ID, productID, quantity)
+	if err != nil {
+		return err
+	}
+
+	err = s.calculateTotalQuantity(cart)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (s *CartService) calculateTotalQuantity(cart *entity.Cart) error {
+	totalQuantity := 0
+	for item := range cart.Items {
+		totalQuantity += cart.Items[item].Quantity
+	}
+	cart.TotalQuantity = totalQuantity
+	err := s.repo.SaveCart(cart)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -46,3 +46,10 @@ func (r *CartRepository) RemoveProduct(cartID, productID uint) error {
 	}
 	return nil
 }
+func (r *CartRepository) ChangeQuantity(cartID uint, carItemID uint, newQuantity int) error {
+	item := entity.CartItem{CartID: cartID, ProductID: carItemID}
+	if err := r.db.Model(&item).UpdateColumn("quantity", newQuantity).Error; err != nil {
+		return err
+	}
+	return nil
+}

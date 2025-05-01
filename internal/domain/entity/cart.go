@@ -9,14 +9,14 @@ type Cart struct {
 	gorm.Model
 	UserID        uint
 	TotalQuantity int
-	createdAt     time.Time
-	updatedAt     time.Time
-	items         []CartItem
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	Items         []CartItem
 }
 type CartItem struct {
 	gorm.Model
 	CartID    uint
 	ProductID uint
 	Quantity  int
-	createdAt time.Time
+	CreatedAt time.Time
 }

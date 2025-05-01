@@ -7,4 +7,5 @@ type CartRepository interface {
 	GetUserCart(userID uint) (*entity.Cart, error)
 	SaveCart(cart *entity.Cart) error
 	RemoveProduct(cartID, productID uint) error
+	ChangeQuantity(cartID, productID uint, addQuantity int) error
 }
