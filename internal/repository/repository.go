@@ -39,3 +39,10 @@ func (r *CartRepository) GetUserCart(userID uint) (*entity.Cart, error) {
 	}
 	return &cart, nil
 }
+func (r *CartRepository) RemoveProduct(cartID, productID uint) error {
+	item := entity.CartItem{CartID: cartID, ProductID: productID}
+	if err := r.db.Where(&item).Delete(&item).Error; err != nil {
+		return err
+	}
+	return nil
+}

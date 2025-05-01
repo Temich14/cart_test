@@ -1,12 +1,5 @@
 package service
 
-import "github.com/Temich14/cart_test/internal/domain/entity"
-
-type CartRepository interface {
-	AddProduct(cartID, productID uint, quantity int) error
-	GetUserCart(userID uint) (*entity.Cart, error)
-	SaveCart(cart *entity.Cart) error
-}
 type CartService struct {
 	repo CartRepository
 }
@@ -26,6 +19,17 @@ func (s *CartService) AddProductToCart(userID, productID uint, quantity int) err
 	}
 	cart.TotalQuantity += quantity
 	err = s.repo.SaveCart(cart)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (s *CartService) RemoveProductFromCart(userID, productID uint) error {
+	cart, err := s.repo.GetUserCart(userID)
+	if err != nil {
+		return err
+	}
+	err = s.repo.RemoveProduct(cart.ID, productID)
 	if err != nil {
 		return err
 	}
