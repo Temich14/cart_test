@@ -3,15 +3,15 @@ package entity
 import "time"
 
 type Order struct {
-	ID        string `gorm:"primaryKey"`
-	UserID    string
+	ID        uint `gorm:"primaryKey"`
+	UserID    uint
 	Status    string
 	CreatedAt time.Time
 	Items     []OrderItem
 }
 type OrderItem struct {
 	ID        string `gorm:"primaryKey"`
-	OrderID   string
-	ProductID string
+	OrderID   uint
+	ProductID uint
 	Quantity  int
 }

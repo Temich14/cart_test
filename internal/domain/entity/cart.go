@@ -1,17 +1,22 @@
 package entity
 
-import "time"
+import (
+	"gorm.io/gorm"
+	"time"
+)
 
 type Cart struct {
-	ID        string `gorm:"primary_key"`
-	UserID    string
-	items     []CartItem
-	createdAt time.Time
-	updatedAt time.Time
+	gorm.Model
+	UserID        uint
+	TotalQuantity int
+	createdAt     time.Time
+	updatedAt     time.Time
+	items         []CartItem
 }
 type CartItem struct {
-	ID        string `gorm:"primary_key"`
-	ProductID string
+	gorm.Model
+	CartID    uint
+	ProductID uint
 	Quantity  int
 	createdAt time.Time
 }
