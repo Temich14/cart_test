@@ -1,6 +1,7 @@
 package cart
 
 import (
+	"github.com/Temich14/cart_test/internal/delivery/http/handler/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -13,7 +14,7 @@ func (h *Handler) Remove(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userID, err := h.tryGetUserID(c)
+	userID, err := utils.TryGetUserID(c)
 	if err != nil {
 		c.Abort()
 		return

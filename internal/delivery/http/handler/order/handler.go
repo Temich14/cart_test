@@ -14,4 +14,7 @@ func NewHandler(s *order.Service) *Handler {
 }
 func (h *Handler) Register(api *gin.RouterGroup) {
 	api.POST("", h.Create)
+	api.GET("", h.GetAll)
+	api.GET("/:order_id")
+
 }

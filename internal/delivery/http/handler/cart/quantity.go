@@ -1,6 +1,7 @@
 package cart
 
 import (
+	"github.com/Temich14/cart_test/internal/delivery/http/handler/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -11,7 +12,7 @@ type quantityDTO struct {
 }
 
 func (h *Handler) ChangeQuantity(c *gin.Context) {
-	userID, err := h.tryGetUserID(c)
+	userID, err := utils.TryGetUserID(c)
 	if err != nil {
 		c.Abort()
 		return
