@@ -44,6 +44,13 @@ func (s *Service) GetUserCart(userID uint) (*entity.Cart, error) {
 	return cart, nil
 }
 func (s *Service) ChangeQuantity(userID, productID uint, quantity int) error {
+	if quantity <= 0 {
+		err := s.RemoveProductFromCart(userID, productID)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 	cart, err := s.repo.GetUserCart(userID)
 	if err != nil {
 		return err
