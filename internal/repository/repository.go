@@ -2,17 +2,30 @@ package repository
 
 import (
 	"errors"
+	"github.com/Temich14/cart_test/internal/config"
 	"github.com/Temich14/cart_test/internal/domain/entity"
+	"gorm.io/driver/postgres"
+	_ "gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"log"
+	"log/slog"
 	"time"
 )
 
 type Repository struct {
-	db *gorm.DB
+	db     *gorm.DB
+	cfg    *config.DBConfig
+	logger *slog.Logger
 }
 
-func NewCartRepository(db *gorm.DB) *Repository {
-	return &Repository{db: db}
+func NewRepository(cfg *config.DBConfig, logger *slog.Logger) *Repository {
+	db, err := gorm.Open(postgres.Open(cfg.Conn), &gorm.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &Repository{
+		db: db, cfg: cfg, logger: logger,
+	}
 }
 func (r *Repository) SaveCart(cart *entity.Cart) error {
 	return r.db.Save(cart).Error
