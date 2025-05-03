@@ -17,19 +17,12 @@ func (h *Handler) Remove(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userIDStr, exists := c.Get("user_id")
-	if !exists {
-		if userIDStr = c.Query("user_id"); userIDStr == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No user_id found"})
-			return
-		}
-	}
-	userID, err := strconv.ParseUint(userIDStr.(string), 10, 32)
+	userID, err := h.tryGetUserID(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Abort()
 		return
 	}
-	err = h.s.RemoveProductFromCart(uint(userID), uint(id))
+	err = h.s.RemoveProductFromCart(userID, uint(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

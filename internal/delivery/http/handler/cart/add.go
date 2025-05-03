@@ -3,7 +3,6 @@ package cart
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
 )
 
 type AddDTO struct {
@@ -21,19 +20,12 @@ func (h *Handler) Add(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userIDStr, exists := c.Get("user_id")
-	if !exists {
-		if userIDStr = c.Query("user_id"); userIDStr != "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No user_id found"})
-			return
-		}
-	}
-	userID, err := strconv.ParseUint(userIDStr.(string), 10, 32)
+	userID, err := h.tryGetUserID(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Abort()
 		return
 	}
-	err = h.s.AddProductToCart(uint(userID), addDTO.ProductID, addDTO.Quantity)
+	err = h.s.AddProductToCart(userID, addDTO.ProductID, addDTO.Quantity)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
