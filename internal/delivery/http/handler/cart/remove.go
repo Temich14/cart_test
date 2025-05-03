@@ -7,10 +7,6 @@ import (
 )
 
 func (h *Handler) Remove(c *gin.Context) {
-	if c.Request.Method == http.MethodDelete {
-		c.Status(http.StatusMethodNotAllowed)
-		return
-	}
 	idStr := c.Param("product_id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {

@@ -19,6 +19,7 @@ func (h *Handler) Register(api *gin.RouterGroup) {
 	api.POST("", h.Add)
 	api.DELETE("/:product_id", h.Remove)
 	api.GET("", h.Get)
+	api.PATCH("", h.ChangeQuantity)
 }
 func (h *Handler) tryGetUserID(c *gin.Context) (uint, error) {
 	userIDStr, exists := c.Get("user_id")
