@@ -11,10 +11,12 @@ import (
 	"github.com/Temich14/cart_test/internal/service/order"
 	"log"
 	"log/slog"
+	"runtime/debug"
 )
 
 type App struct {
 	server *http.Server
+	repo   DBCloser
 	cfg    *config.AppConfig
 	logger *slog.Logger
 }
@@ -23,9 +25,11 @@ func NewApp(cfg *config.AppConfig, logger *slog.Logger) *App {
 	return &App{cfg: cfg, logger: logger}
 }
 func (a *App) Run() {
-	a.server = http.NewServer(&a.cfg.ServerConfig)
+	a.server = http.NewServer(a.cfg.ServerConfig)
 
-	repo := repository.NewRepository(&a.cfg.DBConfig, a.logger)
+	repo := repository.NewRepository(a.cfg.DBConfig, a.logger)
+
+	a.repo = repo
 
 	cartService := cart2.NewCartService(repo)
 	cartHandler := cart.NewHandler(cartService)
@@ -46,5 +50,10 @@ func (a *App) Run() {
 func (a *App) Stop(ctx context.Context) {
 	err := a.server.Stop(ctx)
 	if err != nil {
+		a.logger.Error("error", slog.String("stack", string(debug.Stack())))
+	}
+	err = a.repo.CloseDB()
+	if err != nil {
+		a.logger.Error("error", slog.String("stack", string(debug.Stack())))
 	}
 }
