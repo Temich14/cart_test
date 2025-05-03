@@ -18,6 +18,16 @@ type Repository struct {
 	logger *slog.Logger
 }
 
+func (r *Repository) CloseDB() error {
+	db, err := r.db.DB()
+	if err != nil {
+		return err
+	}
+	if err = db.Close(); err != nil {
+		return err
+	}
+	return nil
+}
 func NewRepository(cfg *config.DBConfig, logger *slog.Logger) *Repository {
 	db, err := gorm.Open(postgres.Open(cfg.Conn), &gorm.Config{})
 	if err != nil {
