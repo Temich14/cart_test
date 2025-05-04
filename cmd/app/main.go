@@ -5,6 +5,7 @@ import (
 	"github.com/Temich14/cart_test/internal/app"
 	"github.com/Temich14/cart_test/internal/config"
 	"github.com/Temich14/cart_test/internal/logger"
+	"github.com/Temich14/cart_test/internal/migrator"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,6 +14,7 @@ import (
 
 func main() {
 	cfg := config.MustLoad()
+	migrator.NewMigrator("migrations/", cfg.DBConfig.Conn).MustApplyMigrations()
 	log := logger.New(cfg.Env)
 	application := app.NewApp(cfg, log)
 	application.Run()
