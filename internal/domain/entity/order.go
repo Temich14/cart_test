@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"gorm.io/gorm"
 	"time"
 )
 
@@ -15,7 +14,7 @@ const (
 )
 
 type Order struct {
-	gorm.Model
+	ID            uint `gorm:"primarykey" json:"id" example:"1"`
 	UserID        uint
 	Cost          float32
 	RawCost       float32
@@ -26,10 +25,14 @@ type Order struct {
 	Items         []OrderItem
 }
 type OrderItem struct {
-	gorm.Model
+	ID        uint `gorm:"primarykey" json:"id" example:"1"`
 	OrderID   uint
 	ProductID uint
 	Quantity  int
 	Cost      float32
 	RawCost   float32
+}
+type OrderPaginationResponse struct {
+	Data []*Order       `json:"data"`
+	Meta PaginationMeta `json:"meta"`
 }

@@ -3,7 +3,7 @@ CREATE TABLE products
     id         SERIAL PRIMARY KEY,
     name       VARCHAR(64) NOT NULL,
     image_url  TEXT,
-    cost       REAL         NOT NULL,
+    cost       REAL        NOT NULL,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP NULL
@@ -26,8 +26,7 @@ CREATE TABLE cart_items
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP NULL,
-    FOREIGN KEY (cart_id) REFERENCES carts (id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products (id)
+    FOREIGN KEY (cart_id) REFERENCES carts (id) ON DELETE CASCADE
 );
 CREATE TABLE orders
 (
@@ -53,6 +52,5 @@ CREATE TABLE order_items
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP NULL,
-    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products (id)
+    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
 );

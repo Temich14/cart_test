@@ -12,6 +12,13 @@ import (
 	"time"
 )
 
+//	@title			Cart API
+//	@version		1.0
+//	@description	API for managing user carts and orders.
+
+//	@host	localhost:8080
+//	@BasePath
+
 func main() {
 	cfg := config.MustLoad()
 	migrator.NewMigrator("migrations/", cfg.DBConfig.Conn).MustApplyMigrations()
