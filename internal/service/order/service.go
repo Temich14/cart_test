@@ -7,25 +7,25 @@ type Service struct {
 }
 
 func NewOrderService(repo Repository) *Service {
-	return &Service{}
+	return &Service{repo: repo}
 }
 
-func (s *Service) CreateNewOrder(cart *entity.Cart) (*entity.Order, error) {
-	order, err := s.repo.CreateOrder(cart)
+func (s *Service) CreateNewOrder(userID uint) (*entity.Order, error) {
+	order, err := s.repo.CreateOrder(userID)
 	if err != nil {
 		return nil, err
 	}
 	return order, nil
 }
-func (s *Service) ChangeStatus(orderID uint, status entity.OrderStatus) error {
-	err := s.repo.ChangeOrderStatus(orderID, status)
+func (s *Service) ChangeStatus(orderID uint, status entity.OrderStatus) (*entity.Order, error) {
+	order, err := s.repo.ChangeOrderStatus(orderID, status)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return order, nil
 }
-func (s *Service) GetOrders(userID uint) ([]*entity.Order, error) {
-	orders, err := s.repo.GetUserOrders(userID)
+func (s *Service) GetOrders(userID uint, status string, page, limit int) (*entity.OrderPaginationResponse, error) {
+	orders, err := s.repo.GetUserOrders(userID, status, page, limit)
 	if err != nil {
 		return nil, err
 	}
