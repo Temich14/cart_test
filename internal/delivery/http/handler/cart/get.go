@@ -1,9 +1,12 @@
 package cart
 
 import (
+	"fmt"
 	"github.com/Temich14/cart_test/internal/delivery/http/handler/utils"
 	"github.com/gin-gonic/gin"
+	"log/slog"
 	"net/http"
+	"runtime/debug"
 	"strconv"
 )
 
@@ -41,10 +44,18 @@ func (h *Handler) Get(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}
 	}
+	fmtStr := fmt.Sprintf("getting user cart on page %d, limit %d", page, limit)
+	h.log.Debug(fmtStr, slog.String("userID", strconv.Itoa(int(userID))))
 	cart, err := h.s.GetUserCart(userID, page, limit)
 	if err != nil {
+		h.log.Error(
+			"error adding product to cart due quantity was less than zero",
+			slog.String("user_id", strconv.Itoa(int(userID))),
+			slog.String("error", err.Error()),
+			slog.String("stack", string(debug.Stack())))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	h.log.Debug("got cart for user", slog.String("userID", strconv.Itoa(int(userID))))
 	c.JSON(http.StatusOK, cart)
 }

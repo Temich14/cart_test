@@ -3,14 +3,16 @@ package order
 import (
 	"github.com/Temich14/cart_test/internal/service/order"
 	"github.com/gin-gonic/gin"
+	"log/slog"
 )
 
 type Handler struct {
-	s *order.Service
+	s   *order.Service
+	log *slog.Logger
 }
 
-func NewHandler(s *order.Service) *Handler {
-	return &Handler{s: s}
+func NewHandler(s *order.Service, log *slog.Logger) *Handler {
+	return &Handler{s: s, log: log}
 }
 func (h *Handler) Register(api *gin.RouterGroup) {
 	api.POST("", h.Create)
