@@ -4,19 +4,21 @@ import (
 	"errors"
 	"github.com/Temich14/cart_test/internal/config"
 	"github.com/Temich14/cart_test/internal/domain/entity"
+	glog "github.com/Temich14/cart_test/internal/logger"
 	"gorm.io/driver/postgres"
 	_ "gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 	"log"
 	"log/slog"
 	"math"
+	"runtime/debug"
 	"time"
 )
 
 type Repository struct {
-	db     *gorm.DB
-	cfg    *config.DBConfig
-	logger *slog.Logger
+	db  *gorm.DB
+	cfg *config.DBConfig
 }
 
 func (r *Repository) CloseDB() error {
@@ -29,13 +31,23 @@ func (r *Repository) CloseDB() error {
 	}
 	return nil
 }
-func NewRepository(cfg *config.DBConfig, logger *slog.Logger) *Repository {
-	db, err := gorm.Open(postgres.Open(cfg.Conn), &gorm.Config{})
+func NewRepository(cfg *config.DBConfig, logger *slog.Logger, env string) *Repository {
+	logger.Info("opening db connection")
+	gormLog := glog.NewGormLogger(logger, gormlogger.Info)
+	if env == "PROD" {
+		gormLog = glog.NewGormLogger(logger, gormlogger.Warn)
+	}
+	db, err := gorm.Open(postgres.Open(cfg.Conn), &gorm.Config{
+		Logger: gormLog,
+	})
 	if err != nil {
+		logger.Error("error opening db connection", slog.String("error", err.Error()), slog.String("stack", string(debug.Stack())))
 		log.Fatal(err)
 	}
+	logger.Info("db connection opened")
+
 	return &Repository{
-		db: db, cfg: cfg, logger: logger,
+		db: db, cfg: cfg,
 	}
 }
 func (r *Repository) SaveCartItem(item *entity.CartItem) error {

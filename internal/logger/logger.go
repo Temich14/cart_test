@@ -7,7 +7,7 @@ import (
 
 func New(env string) *slog.Logger {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	if env == "DEV" {
+	if env == "PROD" {
 		logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	}
 	return logger

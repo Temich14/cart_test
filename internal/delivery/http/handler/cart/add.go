@@ -5,7 +5,10 @@ import (
 	"github.com/Temich14/cart_test/internal/delivery/http/handler/utils"
 	"github.com/Temich14/cart_test/internal/service/cart"
 	"github.com/gin-gonic/gin"
+	"log/slog"
 	"net/http"
+	"runtime/debug"
+	"strconv"
 )
 
 type addDTO struct {
@@ -39,14 +42,26 @@ func (h *Handler) Add(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	newCart, err := h.s.AddProductToCart(userID, dto.ProductID, dto.Quantity)
+	h.log.Debug("adding product to cart", slog.String("user_id", strconv.Itoa(int(userID))))
+	item, err := h.s.AddProductToCart(userID, dto.ProductID, dto.Quantity)
 	if err != nil {
 		if errors.Is(err, cart.ErrQuantityLessThanZero) {
+			h.log.Error(
+				"error adding product to cart due quantity was less than zero",
+				slog.String("user_id", strconv.Itoa(int(userID))),
+				slog.String("error", err.Error()),
+				slog.String("stack", string(debug.Stack())))
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		h.log.Error(
+			"error adding product to cart",
+			slog.String("user_id", strconv.Itoa(int(userID))),
+			slog.String("error", err.Error()),
+			slog.String("stack", string(debug.Stack())))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"cart": *newCart})
+	h.log.Debug("product was added to cart", slog.String("user_id", strconv.Itoa(int(userID))))
+	c.JSON(http.StatusCreated, gin.H{"cart": *item})
 }

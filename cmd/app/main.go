@@ -23,6 +23,7 @@ func main() {
 	cfg := config.MustLoad()
 	migrator.NewMigrator("migrations/", cfg.DBConfig.Conn).MustApplyMigrations()
 	log := logger.New(cfg.Env)
+	log.Info("starting server")
 	application := app.NewApp(cfg, log)
 	application.Run()
 	stop := make(chan os.Signal, 1)
