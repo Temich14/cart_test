@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/joho/godotenv"
 	"os"
 )
@@ -23,7 +24,7 @@ func MustLoad() *AppConfig {
 		Port: os.Getenv("PORT"),
 	}
 	dbConfig := DBConfig{
-		Conn: os.Getenv("DB_CONNECTION"),
+		Conn: buildDBConnectionString(),
 	}
 	APPConfig := AppConfig{
 		Env:          os.Getenv("ENV"),
@@ -31,4 +32,13 @@ func MustLoad() *AppConfig {
 		DBConfig:     &dbConfig,
 	}
 	return &APPConfig
+}
+func buildDBConnectionString() string {
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	dbname := os.Getenv("DB_NAME")
+
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbname)
 }
