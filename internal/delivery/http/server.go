@@ -48,5 +48,8 @@ func (s *Server) Stop(ctx context.Context) error {
 	return s.Server.Shutdown(ctx)
 }
 func (s *Server) initDocs() {
-	s.api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	s.api.GET("/docs", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/docs/index.html")
+	})
+	s.api.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
