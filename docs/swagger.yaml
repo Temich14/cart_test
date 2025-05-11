@@ -115,7 +115,6 @@ definitions:
         - $ref: '#/definitions/entity.OrderStatus'
         example: completed
     type: object
-host: localhost:8080
 info:
   contact: {}
   description: API for managing user carts and orders.
@@ -412,4 +411,9 @@ paths:
       summary: Изменить статус заказа
       tags:
       - order
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
