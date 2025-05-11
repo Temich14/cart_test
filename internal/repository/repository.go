@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 	"github.com/Temich14/cart_test/internal/config"
 	"github.com/Temich14/cart_test/internal/domain/entity"
 	glog "github.com/Temich14/cart_test/internal/logger"
@@ -105,6 +106,16 @@ func (r *Repository) UpdateTotalQuantity(cartID uint) error {
 		Where("id = ?", cartID).
 		Update("total_quantity", totalQuantity).Error
 }
+func (r *Repository) GetCartMeta(cartID uint) (*entity.Cart, error) {
+	cart := entity.Cart{
+		ID: cartID,
+	}
+	err := r.db.Model(&entity.Cart{}).
+		Select("id", "user_id", "total_quantity", "total_cost", "created_at", "updated_at").
+		Where("id = ?", cartID).
+		First(&cart).Error
+	return &cart, err
+}
 func (r *Repository) GetUserCart(userID uint, page, limit int) (*entity.CartWithItemsPagination, error) {
 	var cart entity.Cart
 	err := r.db.Where("user_id = ?", userID).First(&cart).Error
@@ -135,6 +146,7 @@ func (r *Repository) GetUserCart(userID uint, page, limit int) (*entity.CartWith
 		ID:            cart.ID,
 		UserID:        cart.UserID,
 		TotalQuantity: cart.TotalQuantity,
+		TotalCost:     cart.TotalCost,
 		CreatedAt:     cart.CreatedAt,
 		UpdatedAt:     cart.UpdatedAt,
 		Items:         items,
@@ -146,20 +158,32 @@ func (r *Repository) GetUserCart(userID uint, page, limit int) (*entity.CartWith
 		},
 	}, nil
 }
-func (r *Repository) RemoveProduct(cartID, productID uint) (uint, error) {
-	item := entity.CartItem{CartID: cartID, ProductID: productID}
-	if err := r.db.Where(&item).Delete(&item).Error; err != nil {
-		return 0, err
+func (r *Repository) RemoveProduct(cartID, productID uint) (*entity.CartItem, error) {
+	var item entity.CartItem
+	err := r.db.Where("cart_id = ? AND product_id = ?", cartID, productID).First(&item).Error
+	if err != nil {
+		return nil, err
 	}
-	return productID, nil
+	err = r.db.Where("cart_id = ? AND product_id = ?", cartID, productID).Delete(&entity.CartItem{}).Error
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
-func (r *Repository) ChangeQuantity(cartID uint, carItemID uint, newQuantity int) error {
-	if err := r.db.Model(&entity.CartItem{CartID: cartID, ProductID: carItemID}).
+func (r *Repository) ChangeQuantity(cartID uint, carItemID uint, newQuantity int) (*entity.CartItem, error) {
+	prevItem := entity.CartItem{
+		ID: carItemID,
+	}
+	err := r.db.Model(&prevItem).Where("id = ?", carItemID).First(&prevItem).Error
+	if err != nil {
+		return nil, err
+	}
+	if err = r.db.Model(&entity.CartItem{CartID: cartID, ProductID: carItemID}).
 		Where("cart_id = ? AND product_id = ?", cartID, carItemID).
 		UpdateColumn("quantity", newQuantity).Error; err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &prevItem, nil
 }
 func (r *Repository) CreateOrder(userID uint) (*entity.Order, error) {
 	var cart entity.Cart
@@ -169,6 +193,7 @@ func (r *Repository) CreateOrder(userID uint) (*entity.Order, error) {
 	status := entity.CREATED
 	order := entity.Order{
 		UserID:        cart.UserID,
+		Cost:          cart.TotalCost,
 		ItemsQuantity: cart.TotalQuantity,
 		Status:        string(status),
 		CreatedAt:     time.Now(),
@@ -243,4 +268,54 @@ func paginate(page, limit int) func(db *gorm.DB) *gorm.DB {
 		offset := (page - 1) * limit
 		return db.Offset(offset).Limit(limit)
 	}
+}
+
+func (r *Repository) GetProductsByIDs(productIDs []uint) (map[uint]*entity.Product, error) {
+	if len(productIDs) == 0 {
+		return map[uint]*entity.Product{}, nil
+	}
+
+	var products []entity.Product
+	err := r.db.Where("id IN ?", productIDs).Find(&products).Error
+	if err != nil {
+		return nil, err
+	}
+
+	productMap := make(map[uint]*entity.Product, len(products))
+	for i := range products {
+		p := products[i]
+		productMap[p.ID] = &p
+	}
+	return productMap, nil
+}
+func (r *Repository) GetProductByID(productID uint) (*entity.Product, error) {
+	var product entity.Product
+	err := r.db.Where("id = ?", productID).First(&product).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("product with ID %d not found", productID)
+		}
+		return nil, err
+	}
+	return &product, nil
+}
+func (r *Repository) UpdateTotalCost(cartID uint, newCost float32) error {
+	return r.db.Model(&entity.Cart{}).
+		Where("id = ?", cartID).
+		Update("total_cost", newCost).
+		Error
+}
+func (r *Repository) GetCartItems(cartID, productID uint) (*entity.CartItem, error) {
+	item := entity.CartItem{
+		CartID:    cartID,
+		ProductID: productID,
+	}
+	err := r.db.Preload("Items").Where("id = ?", cartID).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("cartItem with ID %d not found", cartID)
+		}
+		return nil, err
+	}
+	return &item, nil
 }

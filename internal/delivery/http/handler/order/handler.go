@@ -1,7 +1,7 @@
 package order
 
 import (
-	"github.com/Temich14/cart_test/internal/service/order"
+	"github.com/Temich14/cart_test/internal/domain/service/order"
 	"github.com/gin-gonic/gin"
 	"log/slog"
 )

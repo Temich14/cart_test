@@ -6,9 +6,9 @@ import (
 	"github.com/Temich14/cart_test/internal/delivery/http"
 	"github.com/Temich14/cart_test/internal/delivery/http/handler/cart"
 	order2 "github.com/Temich14/cart_test/internal/delivery/http/handler/order"
+	cart2 "github.com/Temich14/cart_test/internal/domain/service/cart"
+	"github.com/Temich14/cart_test/internal/domain/service/order"
 	"github.com/Temich14/cart_test/internal/repository"
-	cart2 "github.com/Temich14/cart_test/internal/service/cart"
-	"github.com/Temich14/cart_test/internal/service/order"
 	"log"
 	"log/slog"
 	"runtime/debug"
@@ -31,10 +31,10 @@ func (a *App) Run() {
 
 	a.repo = repo
 
-	cartService := cart2.NewCartService(repo, a.logger)
+	cartService := cart2.NewCartService(repo, a.logger, repo)
 	cartHandler := cart.NewHandler(cartService, a.logger)
 
-	orderService := order.NewOrderService(repo, a.logger)
+	orderService := order.NewOrderService(repo, a.logger, repo)
 	orderHandler := order2.NewHandler(orderService, a.logger)
 
 	a.server.RegisterHandlers(cartHandler.Register, "cart/")

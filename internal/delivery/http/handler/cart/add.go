@@ -3,7 +3,7 @@ package cart
 import (
 	"errors"
 	"github.com/Temich14/cart_test/internal/delivery/http/handler/utils"
-	"github.com/Temich14/cart_test/internal/service/cart"
+	"github.com/Temich14/cart_test/internal/domain/service/cart"
 	"github.com/gin-gonic/gin"
 	"log/slog"
 	"net/http"

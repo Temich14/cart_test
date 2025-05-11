@@ -1,6 +1,7 @@
 package order
 
 import (
+	"github.com/Temich14/cart_test/internal/domain/service"
 	"log/slog"
 	"runtime/debug"
 
@@ -8,12 +9,13 @@ import (
 )
 
 type Service struct {
-	repo Repository
-	log  *slog.Logger
+	repo            Repository
+	log             *slog.Logger
+	productProvider service.ProductProvider
 }
 
-func NewOrderService(repo Repository, log *slog.Logger) *Service {
-	return &Service{repo: repo, log: log}
+func NewOrderService(repo Repository, log *slog.Logger, prov service.ProductProvider) *Service {
+	return &Service{repo: repo, log: log, productProvider: prov}
 }
 
 func (s *Service) CreateNewOrder(userID uint) (*entity.Order, error) {
@@ -60,12 +62,32 @@ func (s *Service) GetOrders(userID uint, status string, page, limit int) (*entit
 
 	orders, err := s.repo.GetUserOrders(userID, status, page, limit)
 	if err != nil {
-		s.log.Error(
-			"failed to retrieve user orders",
-			slog.Uint64("user_id", uint64(userID)),
-			slog.String("error", err.Error()),
-			slog.String("stack", string(debug.Stack())))
+		s.log.Error("failed to retrieve user orders", slog.String("error", err.Error()))
 		return nil, err
+	}
+
+	var productIDs []uint
+	for _, order := range orders.Data {
+		for _, item := range order.Items {
+			productIDs = append(productIDs, item.ProductID)
+		}
+	}
+
+	productsMap, err := s.productProvider.GetProductsByIDs(productIDs)
+	if err != nil {
+		s.log.Error("failed to fetch products", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	for _, order := range orders.Data {
+		for i := range order.Items {
+			item := &order.Items[i]
+			if p, ok := productsMap[item.ProductID]; ok {
+				item.Product = *p
+			} else {
+				s.log.Warn("missing product", slog.Uint64("product_id", uint64(item.ProductID)))
+			}
+		}
 	}
 
 	s.log.Debug("user orders retrieved", slog.Uint64("user_id", uint64(userID)))
@@ -83,6 +105,26 @@ func (s *Service) GetOrder(orderID uint) (*entity.Order, error) {
 			slog.String("error", err.Error()),
 			slog.String("stack", string(debug.Stack())))
 		return nil, err
+	}
+
+	var productIDs []uint
+	for _, item := range order.Items {
+		productIDs = append(productIDs, item.ProductID)
+	}
+
+	productsMap, err := s.productProvider.GetProductsByIDs(productIDs)
+	if err != nil {
+		s.log.Error("failed to fetch products for order", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	for i := range order.Items {
+		item := &order.Items[i]
+		if p, ok := productsMap[item.ProductID]; ok {
+			item.Product = *p
+		} else {
+			s.log.Warn("missing product for order item", slog.Uint64("product_id", uint64(item.ProductID)))
+		}
 	}
 
 	s.log.Debug("order retrieved", slog.Uint64("order_id", uint64(orderID)))
