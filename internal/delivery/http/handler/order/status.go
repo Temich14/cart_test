@@ -20,8 +20,8 @@ type statusDTO struct {
 //	@Tags			order
 //	@Accept			json
 //	@Produce		json
-//	@Param			user_id	query		uint				false	"id пользователя"	example(1)
-//	@Param			input	body		statusDTO			true	"ID заказа и новый статус"
+//	@Param			user_id	query		uint		false	"id пользователя"	example(1)
+//	@Param			input	body		statusDTO	true	"ID заказа и новый статус"
 //	@Success		200		{object}	entity.Order
 //	@Failure		400		{object}	map[string]string
 //	@Failure		500		{object}	map[string]string

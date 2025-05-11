@@ -12,11 +12,13 @@ import (
 	"time"
 )
 
-//	@title			Cart API
-//	@version		1.0
-//	@description	API for managing user carts and orders.
-
-//	@host	localhost:8080
+//	@title						Cart API
+//	@version					1.0
+//	@description				API for managing user carts and orders.
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
+//	@host						localhost:8080
 //	@BasePath
 
 func main() {

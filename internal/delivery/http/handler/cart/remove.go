@@ -16,8 +16,8 @@ import (
 //	@Description	Удаляет товар с указанным ID из корзины пользователя
 //	@Tags			cart
 //	@Produce		json
-//	@Param			user_id	query		uint		false	"id пользователя"	example(1)
-//	@Param			product_id	path		int	true	"ID товара"
+//	@Param			user_id		query		uint	false	"id пользователя"	example(1)
+//	@Param			product_id	path		int		true	"ID товара"
 //	@Success		200			{object}	entity.Cart
 //	@Failure		400			{object}	map[string]string
 //	@Failure		500			{object}	map[string]string
