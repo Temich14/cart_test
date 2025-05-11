@@ -14,7 +14,7 @@ type MockRepo struct {
 func NewServiceWithMock() (*Service, *MockRepo) {
 	repo := new(MockRepo)
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return NewOrderService(repo, logger), repo
+	return NewOrderService(repo, logger, repo), repo
 }
 
 func (m *MockRepo) CreateOrder(userID uint) (*entity.Order, error) {
@@ -35,4 +35,10 @@ func (m *MockRepo) GetUserOrders(userID uint, status string, page, limit int) (*
 func (m *MockRepo) GetUserOrder(orderID uint) (*entity.Order, error) {
 	args := m.Called(orderID)
 	return args.Get(0).(*entity.Order), args.Error(1)
+}
+func (m *MockRepo) GetProductByID(productID uint) (*entity.Product, error) {
+	return nil, nil
+}
+func (m *MockRepo) GetProductsByIDs(productIDs []uint) (map[uint]*entity.Product, error) {
+	return nil, nil
 }

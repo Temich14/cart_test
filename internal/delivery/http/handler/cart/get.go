@@ -16,11 +16,11 @@ import (
 //	@Description	Возвращает корзину пользователя со списком товаров
 //	@Tags			cart
 //	@Produce		json
-//	@Param			page	query		int			false	"страница пагинации"	example(1)
-//	@Param			limit	query		int			false	"лимит пагинации"		example(10)
-//	@Param			user_id	query		uint	false	"id пользователя"	example(1)
-//	@Success		200	{object}	entity.Cart
-//	@Failure		500	{object}	map[string]string
+//	@Param			page	query		int		false	"страница пагинации"	example(1)
+//	@Param			limit	query		int		false	"лимит пагинации"		example(10)
+//	@Param			user_id	query		uint	false	"id пользователя"		example(1)
+//	@Success		200		{object}	entity.Cart
+//	@Failure		500		{object}	map[string]string
 //	@Router			/cart [get]
 func (h *Handler) Get(c *gin.Context) {
 	userID, err := utils.TryGetUserID(c)

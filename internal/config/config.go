@@ -7,7 +7,8 @@ import (
 )
 
 type ServerConfig struct {
-	Port string
+	Port   string
+	Secret string
 }
 type DBConfig struct {
 	Conn string
@@ -21,7 +22,8 @@ type AppConfig struct {
 func MustLoad() *AppConfig {
 	_ = godotenv.Load()
 	srvConfig := ServerConfig{
-		Port: os.Getenv("PORT"),
+		Port:   os.Getenv("PORT"),
+		Secret: os.Getenv("SECRET"),
 	}
 	dbConfig := DBConfig{
 		Conn: buildDBConnectionString(),

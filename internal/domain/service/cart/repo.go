@@ -8,7 +8,7 @@ type Repository interface {
 	GetCartID(userID uint) (uint, error)
 	GetUserCart(userID uint, page, limit int) (*entity.CartWithItemsPagination, error)
 	SaveCart(cart *entity.Cart) error
-	RemoveProduct(cartID, productID uint) (uint, error)
-	ChangeQuantity(cartID, productID uint, addQuantity int) error
-	UpdateTotalQuantity(cartID uint) error
+	RemoveProduct(cartID, productID uint) (*entity.CartItem, error)
+	ChangeQuantity(cartID, productID uint, addQuantity int) (*entity.CartItem, error)
+	GetCartMeta(cartID uint) (*entity.Cart, error)
 }

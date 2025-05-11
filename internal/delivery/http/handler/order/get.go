@@ -16,10 +16,10 @@ import (
 //	@Description	Возвращает список всех заказов пользователя
 //	@Tags			order
 //	@Produce		json
-//	@Param			user_id	query		uint		false	"id пользователя"	example(1)
-//	@Param			status	query		string		false	"сортировка по статуса"	example(completed)
-//	@Param			page	query		int			false	"страница пагинации"	example(1)
-//	@Param			limit	query		int			false	"лимит пагинации"		example(10)
+//	@Param			user_id	query		uint	false	"id пользователя"		example(1)
+//	@Param			status	query		string	false	"сортировка по статуса"	example(completed)
+//	@Param			page	query		int		false	"страница пагинации"	example(1)
+//	@Param			limit	query		int		false	"лимит пагинации"		example(10)
 //	@Success		200		{array}		entity.Order
 //	@Failure		500		{object}	map[string]string
 //	@Router			/order 	[get]
@@ -82,8 +82,8 @@ func (h *Handler) GetAll(c *gin.Context) {
 //	@Description	Возвращает заказ с указанным ID
 //	@Tags			order
 //	@Produce		json
-//	@Param			user_id	query		uint		false	"id пользователя"	example(1)
-//	@Param			orderID	path		int	true	"ID заказа"
+//	@Param			user_id	query		uint	false	"id пользователя"	example(1)
+//	@Param			orderID	path		int		true	"ID заказа"
 //	@Success		200		{object}	entity.Order
 //	@Failure		400		{object}	map[string]string
 //	@Router			/order/{orderID} [get]

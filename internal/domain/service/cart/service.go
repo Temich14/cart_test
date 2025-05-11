@@ -2,17 +2,19 @@ package cart
 
 import (
 	"github.com/Temich14/cart_test/internal/domain/entity"
+	"github.com/Temich14/cart_test/internal/domain/service"
 	"log/slog"
 	"runtime/debug"
 )
 
 type Service struct {
-	repo Repository
-	log  *slog.Logger
+	repo            Repository
+	log             *slog.Logger
+	productProvider service.ProductProvider
 }
 
-func NewCartService(repo Repository, log *slog.Logger) *Service {
-	return &Service{repo: repo, log: log}
+func NewCartService(repo Repository, log *slog.Logger, provider service.ProductProvider) *Service {
+	return &Service{repo: repo, log: log, productProvider: provider}
 }
 
 func (s *Service) AddProductToCart(userID, productID uint, quantity int) (*entity.CartItem, error) {
@@ -29,7 +31,19 @@ func (s *Service) AddProductToCart(userID, productID uint, quantity int) (*entit
 		return nil, ErrQuantityLessThanZero
 	}
 
+	product, err := s.productProvider.GetProductByID(productID)
+	if err != nil {
+		s.log.Error(
+			"error getting product",
+			slog.Uint64("user_id", uint64(userID)),
+			slog.Uint64("product_id", uint64(productID)),
+			slog.String("error", err.Error()),
+			slog.String("stack", string(debug.Stack())))
+		return nil, err
+	}
+
 	cartID, err := s.repo.GetCartID(userID)
+
 	if err != nil {
 		s.log.Error(
 			"error getting cart",
@@ -49,12 +63,22 @@ func (s *Service) AddProductToCart(userID, productID uint, quantity int) (*entit
 			slog.String("stack", string(debug.Stack())))
 		return nil, err
 	}
-	err = s.repo.UpdateTotalQuantity(cartID)
+	cartMeta, err := s.repo.GetCartMeta(cartID)
 	if err != nil {
 		s.log.Error(
-			"error updating total quantity",
+			"error getting cartMeta",
 			slog.Uint64("user_id", uint64(userID)),
-			slog.Uint64("product_id", uint64(productID)),
+			slog.String("error", err.Error()),
+			slog.String("stack", string(debug.Stack())))
+		return nil, err
+	}
+	cartMeta.TotalQuantity += quantity
+	cartMeta.TotalCost += product.Cost * float32(quantity)
+	err = s.repo.SaveCart(cartMeta)
+	if err != nil {
+		s.log.Error(
+			"error saving cart",
+			slog.Uint64("user_id", uint64(userID)),
 			slog.String("error", err.Error()),
 			slog.String("stack", string(debug.Stack())))
 		return nil, err
@@ -67,6 +91,16 @@ func (s *Service) RemoveProductFromCart(userID, productID uint) (uint, error) {
 		slog.Uint64("user_id", uint64(userID)),
 		slog.Uint64("product_id", uint64(productID)))
 
+	product, err := s.productProvider.GetProductByID(productID)
+	if err != nil {
+		s.log.Error(
+			"error getting product",
+			slog.Uint64("user_id", uint64(userID)),
+			slog.Uint64("product_id", uint64(productID)),
+			slog.String("error", err.Error()),
+			slog.String("stack", string(debug.Stack())))
+		return 0, err
+	}
 	cartID, err := s.repo.GetCartID(userID)
 	if err != nil {
 		s.log.Error(
@@ -76,7 +110,7 @@ func (s *Service) RemoveProductFromCart(userID, productID uint) (uint, error) {
 			slog.String("stack", string(debug.Stack())))
 		return 0, err
 	}
-	rId, err := s.repo.RemoveProduct(cartID, productID)
+	cartItem, err := s.repo.RemoveProduct(cartID, productID)
 	if err != nil {
 		s.log.Error(
 			"failed to remove product",
@@ -86,18 +120,29 @@ func (s *Service) RemoveProductFromCart(userID, productID uint) (uint, error) {
 			slog.String("stack", string(debug.Stack())))
 		return 0, err
 	}
-	err = s.repo.UpdateTotalQuantity(cartID)
+	cartMeta, err := s.repo.GetCartMeta(cartID)
 	if err != nil {
 		s.log.Error(
-			"failed to update total quantity",
-			slog.Uint64("cart_id", uint64(cartID)),
+			"error getting cartMeta",
+			slog.Uint64("user_id", uint64(userID)),
+			slog.String("error", err.Error()),
+			slog.String("stack", string(debug.Stack())))
+		return 0, err
+	}
+	cartMeta.TotalQuantity -= cartItem.Quantity
+	cartMeta.TotalCost -= product.Cost * float32(cartItem.Quantity)
+	err = s.repo.SaveCart(cartMeta)
+	if err != nil {
+		s.log.Error(
+			"error saving cart",
+			slog.Uint64("user_id", uint64(userID)),
 			slog.String("error", err.Error()),
 			slog.String("stack", string(debug.Stack())))
 		return 0, err
 	}
 
 	s.log.Debug("product removed from cart", slog.Uint64("user_id", uint64(userID)), slog.Uint64("product_id", uint64(productID)))
-	return rId, nil
+	return cartItem.ID, nil
 }
 func (s *Service) GetUserCart(userID uint, page, limit int) (*entity.CartWithItemsPagination, error) {
 	s.log.Debug("retrieving user cart",
@@ -115,6 +160,26 @@ func (s *Service) GetUserCart(userID uint, page, limit int) (*entity.CartWithIte
 		return nil, err
 	}
 
+	var productsIDs []uint
+
+	for _, item := range cart.Items {
+		productsIDs = append(productsIDs, item.ProductID)
+	}
+
+	itemsMap, err := s.productProvider.GetProductsByIDs(productsIDs)
+
+	if err != nil {
+		return nil, err
+	}
+	for i := range cart.Items {
+		item := &cart.Items[i]
+		product, ok := itemsMap[item.ProductID]
+		if !ok {
+			s.log.Warn("product getting error", slog.Uint64("product_id", uint64(item.ProductID)))
+			continue
+		}
+		item.Product = *product
+	}
 	s.log.Debug("user cart retrieved", slog.Uint64("user_id", uint64(userID)))
 	return cart, nil
 }
@@ -133,9 +198,18 @@ func (s *Service) ChangeQuantity(userID, productID uint, quantity int) (int, err
 			slog.String("stack", string(debug.Stack())))
 		return 0, err
 	}
+	product, err := s.productProvider.GetProductByID(productID)
+	if err != nil {
+		return 0, err
+	}
+	cartMeta, err := s.repo.GetCartMeta(cartID)
+	if err != nil {
+		return 0, err
+	}
 	if quantity <= 0 {
 		s.log.Debug("quantity <= 0, removing product", slog.Uint64("user_id", uint64(userID)), slog.Uint64("product_id", uint64(productID)))
-		if _, err = s.RemoveProductFromCart(userID, productID); err != nil {
+		_, err = s.RemoveProductFromCart(userID, productID)
+		if err != nil {
 			s.log.Error(
 				"failed to remove product",
 				slog.Uint64("user_id", uint64(userID)),
@@ -143,19 +217,11 @@ func (s *Service) ChangeQuantity(userID, productID uint, quantity int) (int, err
 				slog.String("stack", string(debug.Stack())))
 			return 0, err
 		}
-		err = s.repo.UpdateTotalQuantity(cartID)
-		if err != nil {
-			s.log.Error(
-				"failed to update total quantity after removal",
-				slog.Uint64("cart_id", uint64(cartID)),
-				slog.String("error", err.Error()),
-				slog.String("stack", string(debug.Stack())))
-			return 0, err
-		}
 		s.log.Debug("product removed due to zero quantity", slog.Uint64("user_id", uint64(userID)), slog.Uint64("product_id", uint64(productID)))
 		return 0, nil
 	}
-	if err = s.repo.ChangeQuantity(cartID, productID, quantity); err != nil {
+	prevItem, err := s.repo.ChangeQuantity(cartID, productID, quantity)
+	if err != nil {
 		s.log.Error(
 			"failed to change product quantity",
 			slog.Uint64("cart_id", uint64(cartID)),
@@ -163,15 +229,23 @@ func (s *Service) ChangeQuantity(userID, productID uint, quantity int) (int, err
 			slog.String("stack", string(debug.Stack())))
 		return 0, err
 	}
-	err = s.repo.UpdateTotalQuantity(cartID)
+	delta := quantity - prevItem.Quantity
+	cartMeta.TotalQuantity += delta
+	cartMeta.TotalCost += product.Cost * float32(delta)
+
+	s.log.Info("delta", "delta", delta, "cartMeta", cartMeta)
+	s.log.Info("delta", "prev", prevItem.Quantity, "quanitty", quantity)
+
+	err = s.repo.SaveCart(cartMeta)
 	if err != nil {
 		s.log.Error(
-			"failed to update total quantity after change",
+			"error saving cart",
 			slog.Uint64("cart_id", uint64(cartID)),
 			slog.String("error", err.Error()),
 			slog.String("stack", string(debug.Stack())))
 		return 0, err
 	}
+
 	s.log.Debug("product quantity changed", slog.Uint64("user_id", uint64(userID)), slog.Uint64("product_id", uint64(productID)), slog.Int("quantity", quantity))
 	return quantity, nil
 }
