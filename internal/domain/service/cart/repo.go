@@ -2,6 +2,7 @@ package cart
 
 import "github.com/Temich14/cart_test/internal/domain/entity"
 
+// Repository интерфейс для взаимодействия с бд.
 type Repository interface {
 	SaveCartItem(item *entity.CartItem) error
 	AddProduct(cartID, productID uint, quantity int) (*entity.CartItem, error)

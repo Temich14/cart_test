@@ -22,6 +22,7 @@ type Server struct {
 	logger *slog.Logger
 }
 
+// NewServer создает новый экземпляр сервера
 func NewServer(cfg *config.ServerConfig, logger *slog.Logger) *Server {
 	return &Server{
 		api:    gin.New(),
@@ -29,12 +30,18 @@ func NewServer(cfg *config.ServerConfig, logger *slog.Logger) *Server {
 		logger: logger,
 	}
 }
+
+// RegisterHandlers регистрирует группы хендлеров
 func (s *Server) RegisterHandlers(registerFunc func(engine *gin.RouterGroup), groupURL string) {
 	registerFunc(s.api.Group(groupURL))
 }
+
+// registerMiddleware регистрирует middleware
 func (s *Server) registerMiddleware(middleware ...gin.HandlerFunc) {
 	s.api.Use(middleware...)
 }
+
+// createCors настройка cors для сервера
 func createCors() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost"},
@@ -42,7 +49,7 @@ func createCors() gin.HandlerFunc {
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		MaxAge:           24 * time.Hour,
+		MaxAge:           12 * time.Hour,
 	})
 }
 func (s *Server) Run() error {
@@ -61,9 +68,13 @@ func (s *Server) Run() error {
 	s.logger.Info("server started and listen on " + s.Server.Addr)
 	return nil
 }
+
+// Stop останавливает работу сервера
 func (s *Server) Stop(ctx context.Context) error {
 	return s.Server.Shutdown(ctx)
 }
+
+// initDocs инициализирует url для получения swagger-документации
 func (s *Server) initDocs() {
 	s.api.GET("/docs", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/docs/index.html")

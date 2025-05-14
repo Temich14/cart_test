@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// TryGetUserID пытается получить id пользователя из токена авторизации, либо из query-параметра запроса
 func TryGetUserID(c *gin.Context) (uint, error) {
 	userIDStr, exists := c.Get("user_id")
 	if !exists {

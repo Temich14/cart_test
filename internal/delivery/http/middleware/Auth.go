@@ -13,6 +13,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// TokenClaimer получает токен авторизации, извелкает из него user_id и добовляет его в контекст.
 func TokenClaimer(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString, err := getToken(c)
