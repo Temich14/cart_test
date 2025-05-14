@@ -1,3 +1,4 @@
+// Package order содержит реализацию бизнес-логики для работы с заказами пользователей.
 package order
 
 import (
@@ -14,10 +15,21 @@ type Service struct {
 	productProvider service.ProductProvider
 }
 
+// NewOrderService создаёт новый экземпляр сервиса заказов.
+//   - repo: интерфейс репозитория для доступа к данным заказов.
+//   - log: логгер для записи событий.
+//   - prov: провайдер продуктов для подгрузки информации о товарах.
 func NewOrderService(repo Repository, log *slog.Logger, prov service.ProductProvider) *Service {
 	return &Service{repo: repo, log: log, productProvider: prov}
 }
 
+// CreateNewOrder создаёт новый заказ для указанного пользователя.
+// Принимает:
+//   - userID: идентификатор пользователя.
+//
+// Возвращает:
+//   - *entity.Order: созданный заказ.
+//   - error: ошибка, если заказ не удалось создать.
 func (s *Service) CreateNewOrder(userID uint) (*entity.Order, error) {
 	s.log.Debug("creating new order", slog.Uint64("user_id", uint64(userID)))
 
@@ -35,6 +47,15 @@ func (s *Service) CreateNewOrder(userID uint) (*entity.Order, error) {
 	return order, nil
 }
 
+// ChangeStatus изменяет статус существующего заказа.
+//
+// Принимает:
+//   - orderID: идентификатор заказа.
+//   - status: новый статус заказа.
+//
+// Возвращает:
+//   - *entity.Order: заказ с обновлённым статусом.
+//   - error: ошибка, если изменение не удалось.
 func (s *Service) ChangeStatus(orderID uint, status entity.OrderStatus) (*entity.Order, error) {
 	s.log.Debug("changing order status", slog.Uint64("order_id", uint64(orderID)), slog.String("new_status", string(status)))
 
@@ -52,6 +73,17 @@ func (s *Service) ChangeStatus(orderID uint, status entity.OrderStatus) (*entity
 	return order, nil
 }
 
+// GetOrders возвращает список заказов пользователя с пагинацией и фильтрацией по статусу.
+//
+// Принимает:
+//   - userID: идентификатор пользователя.
+//   - status: строковое представление статуса заказа (опционально).
+//   - page: номер страницы.
+//   - limit: количество заказов на странице.
+//
+// Возвращает:
+//   - *entity.OrderPaginationResponse: структура с данными о заказах и пагинацией.
+//   - error: ошибка, если заказы не удалось получить.
 func (s *Service) GetOrders(userID uint, status string, page, limit int) (*entity.OrderPaginationResponse, error) {
 	s.log.Debug("retrieving user orders",
 		slog.Uint64("user_id", uint64(userID)),
@@ -94,6 +126,14 @@ func (s *Service) GetOrders(userID uint, status string, page, limit int) (*entit
 	return orders, nil
 }
 
+// GetOrder возвращает заказ по его идентификатору.
+//
+// Принимает:
+//   - orderID: идентификатор заказа.
+//
+// Возвращает:
+//   - *entity.Order: найденный заказ.
+//   - error: ошибка, если заказ не найден или произошла ошибка при получении.
 func (s *Service) GetOrder(orderID uint) (*entity.Order, error) {
 	s.log.Debug("retrieving order", slog.Uint64("order_id", uint64(orderID)))
 

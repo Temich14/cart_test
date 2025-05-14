@@ -9,6 +9,7 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 )
 
+// GormLogger обертка над slog для взаимодействия с gorm
 type GormLogger struct {
 	logger    *slog.Logger
 	level     gormlogger.LogLevel

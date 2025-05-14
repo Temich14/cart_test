@@ -1,3 +1,4 @@
+// Package cart реализует бизнес-логику для управления корзиной пользователя.
 package cart
 
 import (
@@ -13,10 +14,17 @@ type Service struct {
 	productProvider service.ProductProvider
 }
 
+// NewCartService создает новый экземпляр сервиса корзины.
+//   - repo: интерфейс репозитория для доступа к данным корзины.
+//   - log: логгер.
+//   - provider: интерфейс адаптера для получения информации о продуктах.
 func NewCartService(repo Repository, log *slog.Logger, provider service.ProductProvider) *Service {
 	return &Service{repo: repo, log: log, productProvider: provider}
 }
 
+// AddProductToCart добавляет товар в корзину пользователя.
+// Если товар уже в корзине — увеличивает его количество.
+// Возвращает добавленный элемент корзины или ошибку.
 func (s *Service) AddProductToCart(userID, productID uint, quantity int) (*entity.CartItem, error) {
 	s.log.Debug(
 		"adding product to cart",
@@ -86,6 +94,9 @@ func (s *Service) AddProductToCart(userID, productID uint, quantity int) (*entit
 	s.log.Debug("item added to cart", slog.Uint64("user_id", uint64(userID)), slog.Uint64("product_id", uint64(productID)))
 	return newItem, nil
 }
+
+// RemoveProductFromCart удаляет товар из корзины пользователя.
+// Возвращает ID удалённого элемента или ошибку.
 func (s *Service) RemoveProductFromCart(userID, productID uint) (uint, error) {
 	s.log.Debug("removing product from cart",
 		slog.Uint64("user_id", uint64(userID)),
@@ -144,6 +155,9 @@ func (s *Service) RemoveProductFromCart(userID, productID uint) (uint, error) {
 	s.log.Debug("product removed from cart", slog.Uint64("user_id", uint64(userID)), slog.Uint64("product_id", uint64(productID)))
 	return cartItem.ID, nil
 }
+
+// GetUserCart возвращает корзину пользователя с пагинацией и полной информацией о товарах.
+// Возвращает структуру с товарами и метаинформацией или ошибку.
 func (s *Service) GetUserCart(userID uint, page, limit int) (*entity.CartWithItemsPagination, error) {
 	s.log.Debug("retrieving user cart",
 		slog.Uint64("user_id", uint64(userID)),
@@ -183,6 +197,10 @@ func (s *Service) GetUserCart(userID uint, page, limit int) (*entity.CartWithIte
 	s.log.Debug("user cart retrieved", slog.Uint64("user_id", uint64(userID)))
 	return cart, nil
 }
+
+// ChangeQuantity изменяет количество товара в корзине пользователя.
+// Если количество становится <= 0 — товар удаляется из корзины.
+// Возвращает новое количество или ошибку.
 func (s *Service) ChangeQuantity(userID, productID uint, quantity int) (int, error) {
 	s.log.Debug("changing product quantity",
 		slog.Uint64("user_id", uint64(userID)),

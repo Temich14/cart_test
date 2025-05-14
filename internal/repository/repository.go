@@ -1,3 +1,5 @@
+// Package repository содержит реализацию взаимодействия с базой данных
+// для управления корзинами, товарами и заказами.
 package repository
 
 import (
@@ -22,6 +24,7 @@ type Repository struct {
 	cfg *config.DBConfig
 }
 
+// CloseDB закрывает соединение с базой данных.
 func (r *Repository) CloseDB() error {
 	db, err := r.db.DB()
 	if err != nil {
@@ -32,6 +35,8 @@ func (r *Repository) CloseDB() error {
 	}
 	return nil
 }
+
+// NewRepository создает и возвращает новый экземпляр Repository, устанавливая подключение к БД.
 func NewRepository(cfg *config.DBConfig, logger *slog.Logger, env string) *Repository {
 	logger.Info("opening db connection")
 	gormLog := glog.NewGormLogger(logger, gormlogger.Info)
@@ -51,12 +56,18 @@ func NewRepository(cfg *config.DBConfig, logger *slog.Logger, env string) *Repos
 		db: db, cfg: cfg,
 	}
 }
+
+// SaveCartItem сохраняет или обновляет элемент корзины.
 func (r *Repository) SaveCartItem(item *entity.CartItem) error {
 	return r.db.Save(item).Error
 }
+
+// SaveCart сохраняет или обновляет корзину.
 func (r *Repository) SaveCart(cart *entity.Cart) error {
 	return r.db.Save(cart).Error
 }
+
+// AddProduct добавляет товар в корзину или увеличивает его количество, если товар уже есть.
 func (r *Repository) AddProduct(cartID, productID uint, quantity int) (*entity.CartItem, error) {
 	var item entity.CartItem
 	err := r.db.Where("cart_id = ? AND product_id = ?", cartID, productID).First(&item).Error
@@ -80,6 +91,8 @@ func (r *Repository) AddProduct(cartID, productID uint, quantity int) (*entity.C
 	}
 	return nil, err
 }
+
+// GetCartID получает ID корзины пользователя, создавая ее при необходимости.
 func (r *Repository) GetCartID(userID uint) (uint, error) {
 	var cart entity.Cart
 	err := r.db.Model(&entity.Cart{}).Where("user_id = ?", userID).Select("id").First(&cart).Error
@@ -93,6 +106,8 @@ func (r *Repository) GetCartID(userID uint) (uint, error) {
 	}
 	return cart.ID, nil
 }
+
+// UpdateTotalQuantity обновляет поле total_quantity корзины на основе суммы всех товаров.
 func (r *Repository) UpdateTotalQuantity(cartID uint) error {
 	var totalQuantity int
 	err := r.db.Model(&entity.CartItem{}).
@@ -106,6 +121,8 @@ func (r *Repository) UpdateTotalQuantity(cartID uint) error {
 		Where("id = ?", cartID).
 		Update("total_quantity", totalQuantity).Error
 }
+
+// GetCartMeta возвращает метаинформацию о корзине без списка товаров.
 func (r *Repository) GetCartMeta(cartID uint) (*entity.Cart, error) {
 	cart := entity.Cart{
 		ID: cartID,
@@ -116,6 +133,8 @@ func (r *Repository) GetCartMeta(cartID uint) (*entity.Cart, error) {
 		First(&cart).Error
 	return &cart, err
 }
+
+// GetUserCart возвращает корзину пользователя с пагинацией товаров.
 func (r *Repository) GetUserCart(userID uint, page, limit int) (*entity.CartWithItemsPagination, error) {
 	var cart entity.Cart
 	err := r.db.Where("user_id = ?", userID).First(&cart).Error
@@ -158,6 +177,8 @@ func (r *Repository) GetUserCart(userID uint, page, limit int) (*entity.CartWith
 		},
 	}, nil
 }
+
+// RemoveProduct удаляет товар из корзины.
 func (r *Repository) RemoveProduct(cartID, productID uint) (*entity.CartItem, error) {
 	var item entity.CartItem
 	err := r.db.Where("cart_id = ? AND product_id = ?", cartID, productID).First(&item).Error
@@ -170,6 +191,8 @@ func (r *Repository) RemoveProduct(cartID, productID uint) (*entity.CartItem, er
 	}
 	return &item, nil
 }
+
+// ChangeQuantity изменяет количество определенного товара в корзине.
 func (r *Repository) ChangeQuantity(cartID uint, carItemID uint, newQuantity int) (*entity.CartItem, error) {
 	prevItem := entity.CartItem{
 		ID: carItemID,
@@ -185,6 +208,8 @@ func (r *Repository) ChangeQuantity(cartID uint, carItemID uint, newQuantity int
 	}
 	return &prevItem, nil
 }
+
+// CreateOrder создает заказ из корзины пользователя.
 func (r *Repository) CreateOrder(userID uint) (*entity.Order, error) {
 	var cart entity.Cart
 	if err := r.db.Preload("Items").Where("user_id = ?", userID).First(&cart).Error; err != nil {
@@ -213,6 +238,8 @@ func (r *Repository) CreateOrder(userID uint) (*entity.Order, error) {
 	}
 	return &order, nil
 }
+
+// ChangeOrderStatus изменяет статус существующего заказа.
 func (r *Repository) ChangeOrderStatus(orderID uint, status entity.OrderStatus) (*entity.Order, error) {
 	if err := r.db.Model(&entity.Order{}).
 		Where("id = ?", orderID).
@@ -225,6 +252,8 @@ func (r *Repository) ChangeOrderStatus(orderID uint, status entity.OrderStatus) 
 	}
 	return updatedOrder, nil
 }
+
+// GetUserOrders возвращает заказы пользователя с пагинацией и фильтрацией по статусу.
 func (r *Repository) GetUserOrders(userID uint, status string, page, limit int) (*entity.OrderPaginationResponse, error) {
 	var orders []*entity.Order
 	var total int64
@@ -250,6 +279,8 @@ func (r *Repository) GetUserOrders(userID uint, status string, page, limit int) 
 		},
 	}, nil
 }
+
+// GetUserOrder возвращает конкретный заказ по ID, включая его товары.
 func (r *Repository) GetUserOrder(orderID uint) (*entity.Order, error) {
 	var order *entity.Order
 	if err := r.db.Preload("Items").Where("id = ?", orderID).First(&order).Error; err != nil {
@@ -257,19 +288,8 @@ func (r *Repository) GetUserOrder(orderID uint) (*entity.Order, error) {
 	}
 	return order, nil
 }
-func paginate(page, limit int) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		if page <= 0 || limit <= 0 {
-			return db
-		}
-		if limit > 100 {
-			limit = 100
-		}
-		offset := (page - 1) * limit
-		return db.Offset(offset).Limit(limit)
-	}
-}
 
+// GetProductsByIDs возвращает мапу продуктов по их ID.
 func (r *Repository) GetProductsByIDs(productIDs []uint) (map[uint]*entity.Product, error) {
 	if len(productIDs) == 0 {
 		return map[uint]*entity.Product{}, nil
@@ -288,6 +308,8 @@ func (r *Repository) GetProductsByIDs(productIDs []uint) (map[uint]*entity.Produ
 	}
 	return productMap, nil
 }
+
+// GetProductByID возвращает продукт по его ID.
 func (r *Repository) GetProductByID(productID uint) (*entity.Product, error) {
 	var product entity.Product
 	err := r.db.Where("id = ?", productID).First(&product).Error
@@ -299,23 +321,17 @@ func (r *Repository) GetProductByID(productID uint) (*entity.Product, error) {
 	}
 	return &product, nil
 }
-func (r *Repository) UpdateTotalCost(cartID uint, newCost float32) error {
-	return r.db.Model(&entity.Cart{}).
-		Where("id = ?", cartID).
-		Update("total_cost", newCost).
-		Error
-}
-func (r *Repository) GetCartItems(cartID, productID uint) (*entity.CartItem, error) {
-	item := entity.CartItem{
-		CartID:    cartID,
-		ProductID: productID,
-	}
-	err := r.db.Preload("Items").Where("id = ?", cartID).First(&item).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("cartItem with ID %d not found", cartID)
+
+// paginate отвечает за пагинацию
+func paginate(page, limit int) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if page <= 0 || limit <= 0 {
+			return db
 		}
-		return nil, err
+		if limit > 100 {
+			limit = 100
+		}
+		offset := (page - 1) * limit
+		return db.Offset(offset).Limit(limit)
 	}
-	return &item, nil
 }

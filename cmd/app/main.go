@@ -12,29 +12,32 @@ import (
 	"time"
 )
 
-//	@title						Cart API
-//	@version					1.0
-//	@description				API for managing user carts and orders.
-//	@securityDefinitions.apikey	BearerAuth
-//	@in							header
-//	@name						Authorization
-//	@host						localhost:8080
-//	@BasePath
-
+// @title						Cart API
+// @version					1.0
+// @description				API для управления корзиной пользователя и его заказами
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
+// @host						localhost:8080
+// @BasePath
 func main() {
 	cfg := config.MustLoad()
 	migrator.NewMigrator("migrations/", cfg.DBConfig.Conn).MustApplyMigrations()
 	log := logger.New(cfg.Env)
 	log.Info("starting server")
 	application := app.NewApp(cfg, log)
+
 	application.Run()
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
-	<-stop
+	<-stop // graceful shutdown
+
 	log.Info("shutting down application")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	application.Stop(ctx)
-	log.Info("application successfully stopped")
 
+	log.Info("application successfully stopped")
 }

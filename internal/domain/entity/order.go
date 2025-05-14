@@ -7,10 +7,7 @@ import (
 type OrderStatus string
 
 const (
-	CREATED     OrderStatus = "created"
-	IN_PROGRESS OrderStatus = "in_progress"
-	CANCELED    OrderStatus = "cancelled"
-	COMPLETED   OrderStatus = "completed"
+	CREATED OrderStatus = "created"
 )
 
 type Order struct {
