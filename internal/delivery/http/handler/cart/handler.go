@@ -1,17 +1,16 @@
 package cart
 
 import (
-	"github.com/Temich14/cart_test/internal/domain/service/cart"
 	"github.com/gin-gonic/gin"
 	"log/slog"
 )
 
 type Handler struct {
-	s   *cart.Service
+	s   CartService
 	log *slog.Logger
 }
 
-func NewHandler(s *cart.Service, log *slog.Logger) *Handler {
+func NewHandler(s CartService, log *slog.Logger) *Handler {
 	return &Handler{s: s, log: log}
 }
 func (h *Handler) Register(api *gin.RouterGroup) {
